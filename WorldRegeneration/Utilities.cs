@@ -54,6 +54,13 @@ namespace WorldRegeneration
                 TSPlayer.All.SendInfoMessage("Tile Data Saved...");
 
                 #region Chest Data
+                if (WorldRegeneration.Config.UseInfiniteChests)
+                {
+                    InfiniteChests.Chest[] ic = InfiniteChests.InfiniteChests.GetAllIfnChest();
+                    writer.Write(ic.Length);
+                    for (int i = 0; i < ic.Length; i++)
+                        writer.WriteInfChests(ic[i]);
+                }
                 int totalChests = 0;
                 for (int i = 0; i < 1000; i++)
                 {
@@ -124,15 +131,32 @@ namespace WorldRegeneration
             writer.Write(tile.wall);
             writer.Write(tile.liquid);
         }
-
+        static void WriteInfChests(this BinaryWriter writer, InfiniteChests.Chest chest)
+        {
+            writer.Write(chest.Location.X);
+            writer.Write(chest.Location.Y);
+            writer.Write(chest.Account);
+            writer.Write(chest.Items);
+            writer.Write((int)chest.Flags);
+            writer.Write(chest.BankID);
+            writer.Write(chest.RefillTime);
+        }
+        static InfiniteChests.Chest ReadInfChests(this BinaryReader reader)
+        {
+            return new InfiniteChests.Chest
+            {
+                Location = new Point(reader.ReadInt32(),reader.ReadInt32()),
+                Account = reader.ReadString(),
+                Items = reader.ReadString(),
+                Flags = (InfiniteChests.ChestFlags)reader.ReadInt32(),
+                BankID = reader.ReadInt32(),
+                RefillTime = reader.ReadInt32()
+            };
+        }
         public static void WriteChest(this BinaryWriter writer, Chest chest)
         {
             writer.Write(chest.x);
             writer.Write(chest.y);
-            /*
-                Chest c = Main.chest[Chest.FindChest(point[0].X, point[0].Y)];
-                Main.NewText(string.Concat("Chest Style: ", Main.tile[c.x, c.y].frameX / 2 / 18));
-            */
             //writer.Write(chest.name);
             for (int l = 0; l < 40; l++)
             {
@@ -140,7 +164,7 @@ namespace WorldRegeneration
                 if (item != null && item.stack > 0)
                 {
                     writer.Write((short)item.stack);
-                    writer.Write(item.type);
+                    writer.Write(item.netID);
                     writer.Write(item.prefix);
                 }
                 else
@@ -163,11 +187,6 @@ namespace WorldRegeneration
             {
                 using (var reader = new BinaryReader(new GZipStream(new FileStream(path, FileMode.Open), CompressionMode.Decompress)))
                 {
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/rconvchests");
-                        System.Threading.Thread.Sleep(5000);
-                    }
                     Main.worldSurface = reader.ReadDouble();
                     Main.rockLayer = reader.ReadDouble();
                     Main.dungeonX = reader.ReadInt32();
@@ -206,20 +225,12 @@ namespace WorldRegeneration
                                 }
                                 else if (useRect)
                                     if (rect.Contains(i, j))
-                                    {
-                                        if (tile.type == 21)
-                                            WorldGen.PlaceChest(i, j, 21, false, (tile.frameX / 2) / 18);
-                                        else
-                                            Main.tile[i, j] = tile;
-                                    }
+                                        Main.tile[i, j] = tile;
                                     else
                                         continue;
                                 else
                                 {
-                                    if (tile.type == 21)
-                                        WorldGen.PlaceChest(i, j, 21, false, (tile.frameX / 2) / 18);
-                                    else
-                                        Main.tile[i, j] = tile; // Paste Tiles
+                                    Main.tile[i, j] = tile; // Paste Tiles
                                 }
                             }
                         }
@@ -231,31 +242,52 @@ namespace WorldRegeneration
                         return;
 
                     #region Chest Data
+                    int iccount = 0;
+                    InfiniteChests.Chest[] ic = new InfiniteChests.Chest[0];
+                    if (WorldRegeneration.Config.UseInfiniteChests)
+                    {
+                        iccount = reader.ReadInt32();
+                        ic = new InfiniteChests.Chest[iccount];
+                        for (int i = 0; i < iccount; i++)
+                            ic[i] = reader.ReadInfChests();
+                    }
                     int totalChests = reader.ReadInt32();
                     int chests = 0;
                     int index = 0;
                     if (!WorldRegeneration.Config.IgnoreChests)
                     {
-                        for (int a = 0; a < totalChests; a++)
+                        for (int a = 0; a < (WorldRegeneration.Config.UseInfiniteChests ? iccount : totalChests); a++)
                         {
-                            Chest chest = reader.ReadChest();
-                            for (int c = index; c < 1000; c++)
+                            if (WorldRegeneration.Config.UseInfiniteChests)
                             {
-                                if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                Point location = ic[a].Location;
+                                if (!TShock.Regions.InAreaRegion(location.X, location.Y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    if (InfiniteChests.InfiniteChests.IsNull(location.X, location.Y))
+                                        InfiniteChests.InfiniteChests.InsertInfChest(ic[a]);
+                                    else
+                                        InfiniteChests.InfiniteChests.UpdateInfChest(ic[a]);
+                            }
+                            else
+                            {
+                                Chest chest = reader.ReadChest();
+                                for (int c = index; c < 1000; c++)
                                 {
-                                    break;
-                                }
-                                else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                {
-                                    index++;
-                                    continue;
-                                }
-                                else
-                                {
-                                    Main.chest[Chest.FindChest(chest.x, chest.y)] = chest;
-                                    index++;
-                                    chests++;
-                                    break;
+                                    if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    {
+                                        break;
+                                    }
+                                    else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    {
+                                        index++;
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        Main.chest[c] = chest;
+                                        index++;
+                                        chests++;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -330,21 +362,13 @@ namespace WorldRegeneration
                         }
                     }
                     TSPlayer.All.SendInfoMessage("{0} of {1} Tile Entity Data Loaded...", num1, totalTileEntities);
-
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        TSPlayer.All.SendInfoMessage("Using InfiniteChests Commands...");
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/convchests");
-                        System.Threading.Thread.Sleep(5000);
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/prunechests,");
-                    }
-
                     TSPlayer.All.SendInfoMessage("Successfully regenerated the world.");
 
                     #endregion
                 }
             });
         }
+
         public static Tile ReadTile(this BinaryReader reader)
         {
             Tile tile = new Tile();
@@ -366,6 +390,7 @@ namespace WorldRegeneration
             tile.liquid = reader.ReadByte();
             return tile;
         }
+
         public static Chest ReadChest(this BinaryReader reader)
         {
             Chest chest = new Chest(false);
@@ -378,9 +403,9 @@ namespace WorldRegeneration
                 int stack = reader.ReadInt16();
                 if (stack > 0)
                 {
-                    int type = reader.ReadInt32();
+                    int netID = reader.ReadInt32();
                     byte prefix = reader.ReadByte();
-                    item.SetDefaults(type);
+                    item.netDefaults(netID);
                     item.stack = stack;
                     item.Prefix(prefix);
                 }
@@ -388,6 +413,7 @@ namespace WorldRegeneration
             }
             return chest;
         }
+
         public static Sign ReadSign(this BinaryReader reader)
         {
             Sign sign = new Sign();
@@ -396,6 +422,7 @@ namespace WorldRegeneration
             sign.y = reader.ReadInt32();
             return sign;
         }
+
         public static void ResetSection(int x, int y, int x2, int y2)
         {
             int lowX = Netplay.GetSectionX(x);
@@ -411,18 +438,13 @@ namespace WorldRegeneration
                 }
             }
         }
+
         public static void RegenerateWorld(string path)
         {
             Task.Factory.StartNew(() =>
             {
                 using (var reader = new BinaryReader(new GZipStream(new FileStream(path, FileMode.Open), CompressionMode.Decompress)))
                 {
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/rconvchests");
-                        System.Threading.Thread.Sleep(5000);
-                    }
-
                     #region Reset Specific WorldGen Data
                     WorldGen.oreTier1 = -1;
                     WorldGen.oreTier2 = -1;
@@ -466,10 +488,7 @@ namespace WorldRegeneration
                                 }
                                 else
                                 {
-                                    if (tile.type == 21)
-                                        WorldGen.PlaceChest(i, j, 21, false, (tile.frameX / 2) / 18);
-                                    else
-                                        Main.tile[i, j] = tile;
+                                    Main.tile[i, j] = tile;
                                 }
                             }
                         }
@@ -477,31 +496,53 @@ namespace WorldRegeneration
                     ResetSection(x, y, x2, y2);
 
                     #region Chest Data
+                    int iccount = 0;
+                    InfiniteChests.Chest[] ic = new InfiniteChests.Chest[0];
+                    if (WorldRegeneration.Config.UseInfiniteChests)
+                    {
+                        iccount = reader.ReadInt32();
+                        ic = new InfiniteChests.Chest[iccount];
+                        for (int i = 0; i < iccount; i++)
+                            ic[i] = reader.ReadInfChests();
+                    }
                     int totalChests = reader.ReadInt32();
                     int chests = 0;
                     int index = 0;
                     if (!WorldRegeneration.Config.IgnoreChests)
                     {
-                        for (int a = 0; a < totalChests; a++)
+                        for (int a = 0; a < (WorldRegeneration.Config.UseInfiniteChests ? iccount : totalChests); a++)
                         {
-                            Chest chest = reader.ReadChest();
-                            for (int c = index; c < 1000; c++)
+                            if (WorldRegeneration.Config.UseInfiniteChests)
                             {
-                                if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                Point location = ic[a].Location;
+                                if (!TShock.Regions.InAreaRegion(location.X, location.Y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    if (InfiniteChests.InfiniteChests.IsNull(location.X, location.Y))
+                                        InfiniteChests.InfiniteChests.InsertInfChest(ic[a]);
+                                    else
+                                        InfiniteChests.InfiniteChests.UpdateInfChest(ic[a]);
+                            }
+                            else
+                            {
+                                Chest chest = reader.ReadChest();
+                                for (int c = index; c < 1000; c++)
                                 {
-                                    break;
-                                }
-                                else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                {
-                                    index++;
-                                    continue;
-                                }
-                                else
-                                {
-                                    Main.chest[Chest.FindChest(chest.x, chest.y)] = chest;
-                                    index++;
-                                    chests++;
-                                    break;
+                                    if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    {
+                                        break;
+                                    }
+                                    else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                    {
+                                        index++;
+                                        continue;
+                                    }
+                                    else
+                                    {
+
+                                        Main.chest[c] = chest;
+                                        index++;
+                                        chests++;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -614,13 +655,6 @@ namespace WorldRegeneration
                         WorldGen.shadowOrbCount = 0;
                     }
                     #endregion
-
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/convchests");
-                        System.Threading.Thread.Sleep(10000);
-                        TShockAPI.Commands.HandleCommand(TSPlayer.Server, "/prunechests");
-                    }
                 }
             });
         }
