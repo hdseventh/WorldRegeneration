@@ -30,14 +30,14 @@ namespace WorldRegeneration
                 writer.Write(Main.dungeonY);
                 writer.Write(WorldGen.crimson);
 
-                writer.Write(WorldGen.CopperTierOre);
-                writer.Write(WorldGen.SilverTierOre);
-                writer.Write(WorldGen.IronTierOre);
-                writer.Write(WorldGen.GoldTierOre);
+                writer.Write(WorldGen.SavedOreTiers.Copper);
+                writer.Write(WorldGen.SavedOreTiers.Silver);
+                writer.Write(WorldGen.SavedOreTiers.Iron);
+                writer.Write(WorldGen.SavedOreTiers.Gold);
 
-                writer.Write(WorldGen.oreTier1);
-                writer.Write(WorldGen.oreTier2);
-                writer.Write(WorldGen.oreTier3);
+                writer.Write(WorldGen.SavedOreTiers.Cobalt);
+                writer.Write(WorldGen.SavedOreTiers.Mythril);
+                writer.Write(WorldGen.SavedOreTiers.Adamantite);
 
                 writer.Write(x);
                 writer.Write(y);
@@ -193,14 +193,14 @@ namespace WorldRegeneration
                     Main.dungeonY = reader.ReadInt32();
                     WorldGen.crimson = reader.ReadBoolean();
 
-                    WorldGen.CopperTierOre = reader.ReadUInt16();
-                    WorldGen.SilverTierOre = reader.ReadUInt16();
-                    WorldGen.IronTierOre = reader.ReadUInt16();
-                    WorldGen.GoldTierOre = reader.ReadUInt16();
+                    WorldGen.SavedOreTiers.Copper = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Silver = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Iron = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Gold = reader.ReadInt32();
 
-                    WorldGen.oreTier1 = reader.ReadInt32();
-                    WorldGen.oreTier2 = reader.ReadInt32();
-                    WorldGen.oreTier3 = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Cobalt = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Mythril = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Adamantite = reader.ReadInt32();
 
                     reader.ReadInt32();
                     reader.ReadInt32();
@@ -386,7 +386,7 @@ namespace WorldRegeneration
                     tile.frameY = reader.ReadInt16();
                 }
             }
-            tile.wall = reader.ReadByte();
+            tile.wall = reader.ReadUInt16();
             tile.liquid = reader.ReadByte();
             return tile;
         }
@@ -445,11 +445,6 @@ namespace WorldRegeneration
             {
                 using (var reader = new BinaryReader(new GZipStream(new FileStream(path, FileMode.Open), CompressionMode.Decompress)))
                 {
-                    #region Reset Specific WorldGen Data
-                    WorldGen.oreTier1 = -1;
-                    WorldGen.oreTier2 = -1;
-                    WorldGen.oreTier3 = -1;
-                    #endregion
 
                     Main.worldSurface = reader.ReadDouble();
                     Main.rockLayer = reader.ReadDouble();
@@ -457,14 +452,14 @@ namespace WorldRegeneration
                     Main.dungeonY = reader.ReadInt32();
                     WorldGen.crimson = reader.ReadBoolean();
 
-                    WorldGen.CopperTierOre = reader.ReadUInt16();
-                    WorldGen.SilverTierOre = reader.ReadUInt16();
-                    WorldGen.IronTierOre = reader.ReadUInt16();
-                    WorldGen.GoldTierOre = reader.ReadUInt16();
+                    WorldGen.SavedOreTiers.Copper = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Silver = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Iron = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Gold = reader.ReadInt32();
 
-                    WorldGen.oreTier1 = reader.ReadInt32();
-                    WorldGen.oreTier2 = reader.ReadInt32();
-                    WorldGen.oreTier3 = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Cobalt = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Mythril = reader.ReadInt32();
+                    WorldGen.SavedOreTiers.Adamantite = reader.ReadInt32();
 
                     reader.ReadInt32();
                     reader.ReadInt32();
