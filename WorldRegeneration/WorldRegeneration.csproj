@@ -49,28 +49,24 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="InfiniteChests">
-      <HintPath>..\..\TShock\ServerPlugins\InfiniteChests.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\TShock\Newtonsoft.Json.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="OTAPI">
-      <HintPath>..\..\TShock\OTAPI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="InfiniteChests">
+      <HintPath>Resources\InfiniteChests.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>Resources\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="OTAPI">
+      <HintPath>Resources\OTAPI.dll</HintPath>
+    </Reference>
     <Reference Include="TerrariaServer">
-      <HintPath>..\..\TShock\TerrariaServer.exe</HintPath>
-      <Private>False</Private>
+      <HintPath>Resources\TerrariaServer.exe</HintPath>
     </Reference>
     <Reference Include="TShockAPI">
-      <HintPath>..\..\TShock\ServerPlugins\TShockAPI.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>Resources\TShockAPI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
