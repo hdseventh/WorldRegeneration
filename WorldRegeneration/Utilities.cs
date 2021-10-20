@@ -54,13 +54,6 @@ namespace WorldRegeneration
                 TSPlayer.All.SendInfoMessage("Tile Data Saved...");
 
                 #region Chest Data
-                if (WorldRegeneration.Config.UseInfiniteChests)
-                {
-                    InfiniteChests.Chest[] ic = InfiniteChests.InfiniteChests.GetAllIfnChest();
-                    writer.Write(ic.Length);
-                    for (int i = 0; i < ic.Length; i++)
-                        writer.WriteInfChests(ic[i]);
-                }
                 int totalChests = 0;
                 for (int i = 0; i < 1000; i++)
                 {
@@ -131,28 +124,7 @@ namespace WorldRegeneration
             writer.Write(tile.wall);
             writer.Write(tile.liquid);
         }
-        static void WriteInfChests(this BinaryWriter writer, InfiniteChests.Chest chest)
-        {
-            writer.Write(chest.Location.X);
-            writer.Write(chest.Location.Y);
-            writer.Write(chest.Account);
-            writer.Write(chest.Items);
-            writer.Write((int)chest.Flags);
-            writer.Write(chest.BankID);
-            writer.Write(chest.RefillTime);
-        }
-        static InfiniteChests.Chest ReadInfChests(this BinaryReader reader)
-        {
-            return new InfiniteChests.Chest
-            {
-                Location = new Point(reader.ReadInt32(),reader.ReadInt32()),
-                Account = reader.ReadString(),
-                Items = reader.ReadString(),
-                Flags = (InfiniteChests.ChestFlags)reader.ReadInt32(),
-                BankID = reader.ReadInt32(),
-                RefillTime = reader.ReadInt32()
-            };
-        }
+        
         public static void WriteChest(this BinaryWriter writer, Chest chest)
         {
             writer.Write(chest.x);
@@ -243,14 +215,6 @@ namespace WorldRegeneration
 
                     #region Chest Data
                     int iccount = 0;
-                    InfiniteChests.Chest[] ic = new InfiniteChests.Chest[0];
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        iccount = reader.ReadInt32();
-                        ic = new InfiniteChests.Chest[iccount];
-                        for (int i = 0; i < iccount; i++)
-                            ic[i] = reader.ReadInfChests();
-                    }
                     int totalChests = reader.ReadInt32();
                     int chests = 0;
                     int index = 0;
@@ -258,38 +222,28 @@ namespace WorldRegeneration
                     {
                         for (int a = 0; a < (WorldRegeneration.Config.UseInfiniteChests ? iccount : totalChests); a++)
                         {
-                            if (WorldRegeneration.Config.UseInfiniteChests)
+                            
+                            Chest chest = reader.ReadChest();
+                            for (int c = index; c < 1000; c++)
                             {
-                                Point location = ic[a].Location;
-                                if (!TShock.Regions.InAreaRegion(location.X, location.Y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    if (InfiniteChests.InfiniteChests.IsNull(location.X, location.Y))
-                                        InfiniteChests.InfiniteChests.InsertInfChest(ic[a]);
-                                    else
-                                        InfiniteChests.InfiniteChests.UpdateInfChest(ic[a]);
-                            }
-                            else
-                            {
-                                Chest chest = reader.ReadChest();
-                                for (int c = index; c < 1000; c++)
+                                if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
                                 {
-                                    if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    {
-                                        break;
-                                    }
-                                    else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    {
-                                        index++;
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        Main.chest[c] = chest;
-                                        index++;
-                                        chests++;
-                                        break;
-                                    }
+                                    break;
                                 }
-                            }
+                                else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                {
+                                    index++;
+                                    continue;
+                                }
+                                else
+                                {
+                                    Main.chest[c] = chest;
+                                    index++;
+                                    chests++;
+                                    break;
+                                }
+                            }    
+                            
                         }
                         TSPlayer.All.SendInfoMessage("{0} of {1} Chest Data Loaded...", chests, totalChests);
                     }
@@ -492,14 +446,6 @@ namespace WorldRegeneration
 
                     #region Chest Data
                     int iccount = 0;
-                    InfiniteChests.Chest[] ic = new InfiniteChests.Chest[0];
-                    if (WorldRegeneration.Config.UseInfiniteChests)
-                    {
-                        iccount = reader.ReadInt32();
-                        ic = new InfiniteChests.Chest[iccount];
-                        for (int i = 0; i < iccount; i++)
-                            ic[i] = reader.ReadInfChests();
-                    }
                     int totalChests = reader.ReadInt32();
                     int chests = 0;
                     int index = 0;
@@ -507,39 +453,28 @@ namespace WorldRegeneration
                     {
                         for (int a = 0; a < (WorldRegeneration.Config.UseInfiniteChests ? iccount : totalChests); a++)
                         {
-                            if (WorldRegeneration.Config.UseInfiniteChests)
+                            Chest chest = reader.ReadChest();
+                            for (int c = index; c < 1000; c++)
                             {
-                                Point location = ic[a].Location;
-                                if (!TShock.Regions.InAreaRegion(location.X, location.Y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    if (InfiniteChests.InfiniteChests.IsNull(location.X, location.Y))
-                                        InfiniteChests.InfiniteChests.InsertInfChest(ic[a]);
-                                    else
-                                        InfiniteChests.InfiniteChests.UpdateInfChest(ic[a]);
-                            }
-                            else
-                            {
-                                Chest chest = reader.ReadChest();
-                                for (int c = index; c < 1000; c++)
+                                if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
                                 {
-                                    if (TShock.Regions.InAreaRegion(chest.x, chest.y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    {
-                                        break;
-                                    }
-                                    else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
-                                    {
-                                        index++;
-                                        continue;
-                                    }
-                                    else
-                                    {
+                                    break;
+                                }
+                                else if (Main.chest[c] != null && TShock.Regions.InAreaRegion(Main.chest[c].x, Main.chest[c].y).Any(r => r != null && r.Z >= WorldRegeneration.Config.MaxZRegion))
+                                {
+                                    index++;
+                                    continue;
+                                }
+                                else
+                                {
 
-                                        Main.chest[c] = chest;
-                                        index++;
-                                        chests++;
-                                        break;
-                                    }
+                                    Main.chest[c] = chest;
+                                    index++;
+                                    chests++;
+                                    break;
                                 }
                             }
+
                         }
                     }
                     else

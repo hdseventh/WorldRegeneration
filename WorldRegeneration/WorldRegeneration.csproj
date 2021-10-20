@@ -57,9 +57,6 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="InfiniteChests">
-      <HintPath>Resources\InfiniteChests.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>Resources\Newtonsoft.Json.dll</HintPath>
     </Reference>
