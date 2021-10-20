@@ -158,12 +158,13 @@ namespace WorldRegeneration
                 Config.Write(path);
             }
 
-            if (Config.EnableAutoRegen)
+            //Fix event subscribe on reload by ThRekman
+            if (Config.EnableAutoRegen && !RegenTimer.Enabled)
             {
                 RegenTimer.Elapsed += OnWorldRegeneration;
                 RegenTimer.Start();
             }
-            else
+            else if (!Config.EnableAutoRegen && RegenTimer.Enabled)
             {
                 RegenTimer.Elapsed -= OnWorldRegeneration;
                 RegenTimer.Stop();
