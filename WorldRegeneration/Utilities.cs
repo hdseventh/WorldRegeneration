@@ -554,10 +554,12 @@ namespace WorldRegeneration
                         NPC.downedBoss3 = false;
                         NPC.downedQueenBee = false;
                         NPC.downedSlimeKing = false;
+                        NPC.downedQueenSlime = false;
                         NPC.downedMechBossAny = false;
                         NPC.downedMechBoss1 = false;
                         NPC.downedMechBoss2 = false;
                         NPC.downedMechBoss3 = false;
+                        NPC.downedEmpressOfLight = false;
                         NPC.downedFishron = false;
                         NPC.downedMartians = false;
                         NPC.downedAncientCultist = false;
